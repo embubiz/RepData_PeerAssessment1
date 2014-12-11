@@ -1,25 +1,146 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "Reproducible Research - Assignment 1"
+author: "BOZZI Emiliano"
+date: "Thursday, December 11, 2014"
+output: html_document
+keep_md : true
 ---
 
+R Markdown file for the 1st peer assessment of the Reproducible Research class.  
 
-## Loading and preprocessing the data
+## Introduction
 
+This assignment makes use of data from a personal activity monitoring device. 
+This device collects data at 5 minute intervals through out the day. 
+The data consists of two months (Oct/Nov 2012) of data from an anonymous individual. 
+The data include the number of steps taken in 5 minute intervals each day. 
 
+## Loading and processing the data
+    
+    ```{r}
+library('data.table')
+activity = fread('activity.csv')
+```
 
-## What is mean total number of steps taken per day?
+Modifying date:
+    
+    ```{r}
+activity$date = as.Date(activity$date)
+```
 
+### What is mean total number of steps taken per day?
 
+1. Plotting total number of steps per day
 
-## What is the average daily activity pattern?
+```{r, message = F}
+library('ggplot2')
+library('dplyr')
 
+activity1 = summarise(group_by(activity, date),
+                      sum.steps = sum(steps))
 
+g = ggplot( data = activity1,
+            aes(date, sum.steps))
+g + geom_bar(stat = 'identity')
+```
 
-## Imputing missing values
+2. Calculating mean and median of number of steps per day
 
+```{r}
+mean(activity1$sum.steps, na.rm = T)
+median(activity1$sum.steps, na.rm = T)
+```
 
+### What is the average daily activity pattern?
 
-## Are there differences in activity patterns between weekdays and weekends?
+1. Making a time series plot of the 5-minute interval
+and the average number of steps taken, averaged across all days
+
+```{r, message = F}
+activity2 = summarise(group_by(activity, interval),
+                      avg.steps = mean(steps, na.rm = T))
+g = ggplot( data = activity2,
+            aes(interval, avg.steps))
+g + geom_line()
+```
+
+2. Finding the 5-mins interval containing, on average across all the days in the dataset,
+the maximum number of steps
+
+```{r}
+activity2[activity2$avg.steps == max(activity2$avg.steps), ]$interval
+```
+
+### Imputing missing values
+
+1. Calculating and reporting the total number of missing values in the dataset
+
+```{r}
+sum(is.na(activity$steps))
+```
+
+2. Filling in missing values: strategy devising
+
+NAs are replaced with the mean between the mean value for that day
+*and* the mean for that 5-minute interval.
+
+3. Creating a new dataset that is equal to the original dataset
+but with the missing data filled in
+
+```{r}
+activity3 = data.frame( date = activity$date,
+                        interval = activity$interval,
+                        sum.steps = rep(activity1$sum.steps, each = dim(activity2)[1]),
+                        avg.steps = rep(activity2$avg.steps, times = dim(activity1)[1]),
+                        steps = activity$steps)
+index = is.na(activity$steps)
+activity3$steps[index] = floor(apply(activity3[,3:4],1,mean, na.rm = T)[index])
+activity3 = select(activity3, date, interval, steps)
+```
+
+4. Making a histogram of the total number of steps taken each day...
+
+```{r, message = F}
+activity4 = summarise(group_by(activity3, date),
+                      sum.steps = sum(steps))
+
+g = ggplot( data = activity4,
+            aes(date, sum.steps))
+g + geom_bar(stat = 'identity')
+```
+
+...and Calculating and reporting the mean and median total number of steps taken per day
+
+```{r}
+mean(activity4$sum.steps, na.rm = T)
+median(activity4$sum.steps, na.rm = T)
+```
+
+The applied gap filling reduced mean and median values
+of the total number of steps taken per day by 0.15 % and 1.15 % respectively,
+
+### Are there differences in activity patterns between weekdays and weekends?
+
+1. Modifying the gap filled data set
+
+```{r}
+activity5 = mutate(activity3,
+                   weekday = as.factor(weekdays(date)),
+                   weekend = as.factor(weekday %in% c('Saturday', 'Sunday')))
+```
+
+2. Plotting the time series plot for weekend days and week days
+
+```{r}
+activity6 = summarise(group_by(activity5, interval, weekend),
+                      avg.steps = mean(steps, na.rm = T))
+
+library('lattice')
+xyplot(avg.steps ~ interval | weekend,
+       type = "l",
+       ylab = 'Number of steps',
+       xlab = 'Interval',
+       data = activity6,
+       layout = c(1, 2),
+       strip = strip.custom(factor.levels = c('Weekday', 'Weekend')))
+```
