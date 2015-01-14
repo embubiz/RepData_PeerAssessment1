@@ -1,7 +1,7 @@
 ---
 title: "Reproducible Research - Assignment 1"
 author: "BOZZI Emiliano"
-date: "Thursday, December 11, 2014"
+date: "Thursday, January 15, 2015"
 output: html_document
 keep_md : true
 ---
