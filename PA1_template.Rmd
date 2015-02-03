@@ -1,7 +1,7 @@
 ---
 title: "Reproducible Research - Assignment 1"
 author: "BOZZI Emiliano"
-date: "Thursday, January 15, 2015"
+date: "Sunday, February 1, 2015"
 output: html_document
 keep_md : true
 ---
@@ -16,15 +16,17 @@ The data consists of two months (Oct/Nov 2012) of data from an anonymous individ
 The data include the number of steps taken in 5 minute intervals each day. 
 
 ## Loading and processing the data
-    
-    ```{r}
+
+```{r, warning = F}
+unzip('activity.zip')
+
 library('data.table')
 activity = fread('activity.csv')
 ```
 
 Modifying date:
     
-    ```{r}
+```{r}
 activity$date = as.Date(activity$date)
 ```
 
@@ -32,7 +34,7 @@ activity$date = as.Date(activity$date)
 
 1. Plotting total number of steps per day
 
-```{r, message = F}
+```{r, message = F, warning = F}
 library('ggplot2')
 library('dplyr')
 
